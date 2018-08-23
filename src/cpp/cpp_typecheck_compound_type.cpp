@@ -666,14 +666,16 @@ void cpp_typecheckt::typecheck_compound_declarator(
           exprt already_typechecked(ID_already_typechecked);
           already_typechecked.move_to_operands(expr_call);
 
-          func_symb.value = code_returnt(already_typechecked).make_block();
+          func_symb.value =
+            code_returnt(already_typechecked).make_block().as_expr();
         }
         else
         {
           exprt already_typechecked(ID_already_typechecked);
           already_typechecked.move_to_operands(expr_call);
 
-          func_symb.value = code_expressiont(already_typechecked).make_block();
+          func_symb.value =
+            code_expressiont(already_typechecked).make_block().as_expr();
         }
 
         // add this new function to the list of components

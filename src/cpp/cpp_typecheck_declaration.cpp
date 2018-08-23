@@ -59,7 +59,7 @@ void cpp_typecheckt::convert_anonymous_union(
 
   code_declt decl_statement(cpp_symbol_expr(symbol));
 
-  new_code.move_to_operands(decl_statement);
+  new_code.add_to_operands(decl_statement);
 
   // do scoping
   symbolt union_symbol=
@@ -178,7 +178,7 @@ void cpp_typecheckt::convert_non_template_declaration(
         declarator.init_args().operands());
 
       if(constructor.has_value())
-        symbol.value = constructor.value();
+        symbol.value = constructor.value().as_expr();
       else
         symbol.value = nil_exprt();
     }

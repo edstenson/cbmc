@@ -102,7 +102,7 @@ void cpp_typecheckt::convert_function(symbolt &symbol)
       !symbol.value.has_operands() || !symbol.value.op0().has_operands() ||
       symbol.value.op0().op0().id() != ID_already_typechecked)
     {
-      symbol.value.copy_to_operands(dtor(msymb));
+      symbol.value.copy_to_operands(dtor(msymb).as_expr());
     }
   }
 

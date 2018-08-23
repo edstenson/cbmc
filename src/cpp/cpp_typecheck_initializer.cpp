@@ -183,7 +183,7 @@ void cpp_typecheckt::convert_initializer(symbolt &symbol)
       cpp_constructor(symbol.value.source_location(), expr_symbol, ops);
 
     if(constructor.has_value())
-      symbol.value = constructor.value();
+      symbol.value = constructor.value().as_expr();
     else
       symbol.value = nil_exprt();
   }
@@ -292,7 +292,7 @@ void cpp_typecheckt::zero_initializer(
     already_typechecked(assign.lhs());
 
     typecheck_code(assign);
-    ops.push_back(assign);
+    ops.push_back(assign.as_expr());
   }
   else if(final_type.id()==ID_incomplete_struct ||
           final_type.id()==ID_incomplete_union)
@@ -320,6 +320,6 @@ void cpp_typecheckt::zero_initializer(
     already_typechecked(assign.lhs());
 
     typecheck_code(assign);
-    ops.push_back(assign);
+    ops.push_back(assign.as_expr());
   }
 }

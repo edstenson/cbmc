@@ -2709,7 +2709,7 @@ bool Parser::rConstructorDecl(
     {
     case TOK_INTEGER:
       {
-        constructor.value()=codet("cpp-pure-virtual");
+        constructor.value() = exprt("cpp-pure-virtual");
         set_location(constructor.value(), value);
       }
       break;
@@ -2722,7 +2722,7 @@ bool Parser::rConstructorDecl(
           return false;
         }
 
-        constructor.value()=codet(ID_default);
+        constructor.value() = exprt(ID_default);
         set_location(constructor.value(), value);
       }
       break;
@@ -2735,7 +2735,7 @@ bool Parser::rConstructorDecl(
           return false;
         }
 
-        constructor.value()=codet(ID_cpp_delete);
+        constructor.value() = exprt(ID_cpp_delete);
         set_location(constructor.value(), value);
       }
       break;
@@ -2900,7 +2900,7 @@ bool Parser::rDeclaratorWithInit(
         }
 
         lex.get_token(tk);
-        declarator.value()=codet(ID_default);
+        declarator.value() = exprt(ID_default);
         set_location(declarator.value(), tk);
       }
       else if(lex.LookAhead(0)==TOK_DELETE) // C++0x
@@ -2912,7 +2912,7 @@ bool Parser::rDeclaratorWithInit(
         }
 
         lex.get_token(tk);
-        declarator.value()=codet(ID_cpp_delete);
+        declarator.value() = exprt(ID_cpp_delete);
         set_location(declarator.value(), tk);
       }
       else
@@ -3410,7 +3410,7 @@ bool Parser::rMemberInit(exprt &init)
   std::cout << std::string(__indent, ' ') << "Parser::rMemberInit 2\n";
   #endif
 
-  init=codet(ID_member_initializer);
+  init = exprt(ID_member_initializer);
   init.add(ID_member).swap(name);
 
   cpp_tokent tk1, tk2;
@@ -6575,7 +6575,7 @@ bool Parser::rMSC_if_existsStatement(codet &code)
   if(lex.get_token(tk2)!='{')
     return false;
 
-  codet block;
+  code_blockt block;
 
   while(lex.LookAhead(0)!='}')
   {
@@ -6584,7 +6584,7 @@ bool Parser::rMSC_if_existsStatement(codet &code)
     if(!rStatement(statement))
       return false;
 
-    block.move_to_operands(statement);
+    block.add(std::move(statement));
   }
 
   if(lex.get_token(tk2)!='}')
@@ -6594,7 +6594,7 @@ bool Parser::rMSC_if_existsStatement(codet &code)
     tk1.kind==TOK_MSC_IF_EXISTS?ID_msc_if_exists:
                                 ID_msc_if_not_exists);
 
-  code.move_to_operands(name, block);
+  code.add_to_operands(name, block.as_expr());
 
   set_location(code, tk1);
 
@@ -6755,7 +6755,7 @@ bool Parser::rPrimaryExpr(exprt &exp)
       exp=exprt(ID_side_effect);
       exp.set(ID_statement, ID_statement_expression);
       set_location(exp, tk);
-      exp.move_to_operands(code);
+      exp.add_to_operands(code.as_expr());
 
       if(lex.get_token(tk2)!=')')
         return false;
@@ -7187,7 +7187,7 @@ bool Parser::rFunctionBody(cpp_declaratort &declarator)
     if(lex.get_token(cb)!='}')
       return false;
 
-    declarator.value()=body;
+    declarator.value() = body.as_expr();
     return true;
   }
   else
@@ -7203,7 +7203,7 @@ bool Parser::rFunctionBody(cpp_declaratort &declarator)
       return false;
     }
 
-    declarator.value()=body;
+    declarator.value() = body.as_expr();
 
     current_function.clear();
 
@@ -7248,7 +7248,7 @@ bool Parser::rCompoundStatement(codet &statement)
       return true;        // error recovery
     }
 
-    statement.move_to_operands(statement2);
+    statement.add_to_operands(statement2.as_expr());
   }
 
   if(lex.get_token(cb)!='}')
@@ -7491,7 +7491,7 @@ bool Parser::rStatement(codet &statement)
       if(!rStatement(statement2))
         return false;
 
-      statement.move_to_operands(statement2);
+      statement.add_to_operands(statement2);
       return true;
     }
 
@@ -7612,7 +7612,7 @@ bool Parser::rSwitchStatement(codet &statement)
   if(!rStatement(body))
     return false;
 
-  statement.move_to_operands(exp, body);
+  statement.add_to_operands(exp, body.as_expr());
 
   return true;
 }
@@ -7645,7 +7645,7 @@ bool Parser::rWhileStatement(codet &statement)
   if(!rStatement(body))
     return false;
 
-  statement.move_to_operands(exp, body);
+  statement.add_to_operands(exp, body.as_expr());
 
   return true;
 }
@@ -7684,7 +7684,7 @@ bool Parser::rDoStatement(codet &statement)
   if(lex.get_token(tk4)!=';')
     return false;
 
-  statement.move_to_operands(exp, body);
+  statement.add_to_operands(exp, body.as_expr());
 
   return true;
 }
@@ -7742,10 +7742,10 @@ bool Parser::rForStatement(codet &statement)
     return false;
 
   statement.reserve_operands(4);
-  statement.move_to_operands(exp1);
-  statement.move_to_operands(exp2);
-  statement.move_to_operands(exp3);
-  statement.move_to_operands(body);
+  statement.add_to_operands(exp1);
+  statement.add_to_operands(exp2);
+  statement.add_to_operands(exp3);
+  statement.add_to_operands(body);
 
   return true;
 }
@@ -7775,7 +7775,7 @@ bool Parser::rTryStatement(codet &statement)
     if(!rCompoundStatement(body))
       return false;
 
-    statement.move_to_operands(body);
+    statement.add_to_operands(std::move(body));
   }
 
   // iterate while there are catch clauses
@@ -7830,9 +7830,9 @@ bool Parser::rTryStatement(codet &statement)
 
     assert(body.get_statement()==ID_block);
 
-    body.operands().insert(body.operands().begin(), catch_op);
+    body.operands().insert(body.operands().begin(), catch_op.as_expr());
 
-    statement.move_to_operands(body);
+    statement.add_to_operands(std::move(body));
   }
   while(lex.LookAhead(0)==TOK_CATCH);
 
@@ -7876,7 +7876,7 @@ bool Parser::rMSC_tryStatement(codet &statement)
     if(!rCompoundStatement(body2))
       return false;
 
-    statement.move_to_operands(body1, exp, body2);
+    statement.add_to_operands(body1.as_expr(), exp, body2.as_expr());
   }
   else if(lex.LookAhead(0)==TOK_MSC_FINALLY)
   {
@@ -7886,7 +7886,7 @@ bool Parser::rMSC_tryStatement(codet &statement)
     if(!rCompoundStatement(body2))
       return false;
 
-    statement.move_to_operands(body1, body2);
+    statement.add_to_operands(std::move(body1), std::move(body2));
   }
   else
     return false;
@@ -8170,7 +8170,7 @@ bool Parser::rCondition(exprt &statement)
 
   if(rSimpleDeclaration(declaration))
   {
-    statement=codet(ID_decl);
+    statement = exprt(ID_decl);
     statement.move_to_operands(declaration);
     return true;
   }

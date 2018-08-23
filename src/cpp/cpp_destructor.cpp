@@ -53,7 +53,6 @@ optionalt<codet> cpp_typecheckt::cpp_destructor(
       throw 0;
     }
 
-    new_code.type().id(ID_code);
     new_code.add_source_location()=source_location;
     new_code.set_statement(ID_block);
 
@@ -68,7 +67,7 @@ optionalt<codet> cpp_typecheckt::cpp_destructor(
 
       auto i_code = cpp_destructor(source_location, index);
       if(i_code.has_value())
-        new_code.move_to_operands(i_code.value());
+        to_code_block(new_code).add(i_code.value());
     }
   }
   else

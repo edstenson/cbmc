@@ -47,7 +47,7 @@ static void copy_parent(
   code_assignt code(dereference_exprt(op0), op1);
   code.add_source_location() = source_location;
 
-  block.operands().push_back(code);
+  block.operands().push_back(code.as_expr());
 }
 
 /// Generate code to copy the member.
@@ -76,7 +76,7 @@ static void copy_member(
   code_expressiont code(assign);
   code.add_source_location() = source_location;
 
-  block.operands().push_back(code);
+  block.operands().push_back(code.as_expr());
 }
 
 /// Generate code to copy the member.
@@ -113,7 +113,7 @@ static void copy_array(
   code_expressiont code(assign);
   code.add_source_location() = source_location;
 
-  block.operands().push_back(code);
+  block.operands().push_back(code.as_expr());
 }
 
 /// Generate code for implicit default constructors
@@ -590,7 +590,7 @@ void cpp_typecheckt::full_member_initialization(
         }
         vbases.pop_front();
       }
-      cond.move_to_operands(block);
+      cond.add_to_operands(block.as_expr());
       final_initializers.move_to_sub(cond);
     }
 
@@ -680,7 +680,7 @@ void cpp_typecheckt::full_member_initialization(
         {
           codet tmp(ID_member_initializer);
           tmp.swap(final_initializers.get_sub().back());
-          cond.move_to_operands(tmp);
+          cond.add_to_operands(tmp.as_expr());
           final_initializers.get_sub().back().swap(cond);
         }
       }
