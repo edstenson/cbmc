@@ -190,6 +190,7 @@ std::string expr2ct::convert_rec(
   const qualifierst &qualifiers,
   const std::string &declarator)
 {
+#if 0
   std::unique_ptr<qualifierst> clone = qualifiers.clone();
   c_qualifierst &new_qualifiers = dynamic_cast<c_qualifierst &>(*clone);
   new_qualifiers.read(src);
@@ -664,6 +665,8 @@ std::string expr2ct::convert_rec(
 
     return dest;
   }
+#endif
+  return "";
 }
 
 /// To generate C-like string for defining the given struct
