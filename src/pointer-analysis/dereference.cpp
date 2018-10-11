@@ -237,7 +237,8 @@ exprt dereferencet::dereference_rec(
   }
   else
   {
-    throw "failed to dereference `"+address.id_string()+"'";
+    // failure
+    return nullary_exprt(ID_dereference_failure, type);
   }
 }
 
