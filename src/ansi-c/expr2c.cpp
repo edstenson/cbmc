@@ -1265,18 +1265,29 @@ std::string expr2ct::convert_function(
   const std::string &name,
   unsigned precedence)
 {
+  return convert_function(src.operands(), name, precedence);
+}
+
+std::string expr2ct::convert_function(
+  const exprt::operandst &ops,
+  const std::string &name,
+  unsigned precedence)
+{
   std::string dest=name;
   dest+='(';
+  bool first = true;
 
-  forall_operands(it, src)
+  for(const auto &op : ops)
   {
     unsigned p;
-    std::string op=convert_with_precedence(*it, p);
+    const std::string op_str=convert_with_precedence(op, p);
 
-    if(it!=src.operands().begin())
+    if(first)
+      first=false;
+    else
       dest+=", ";
 
-    dest+=op;
+    dest+=op_str;
   }
 
   dest+=')';
@@ -3005,7 +3016,7 @@ std::string expr2ct::convert_code(
   if(statement=="set_may" ||
      statement=="set_must")
     return
-      indent_str(indent)+convert_function(src, id2string(statement), 16)+";";
+      indent_str(indent)+convert_function(src.operands(), id2string(statement), 16)+";";
 
   unsigned precedence;
   return convert_norep(src, precedence);
