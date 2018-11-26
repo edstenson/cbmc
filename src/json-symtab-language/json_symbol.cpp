@@ -47,7 +47,7 @@ symbolt symbol_from_json(const jsont &in)
   if(!in.is_object())
     throw deserialization_exceptiont("symbol_from_json takes an object");
   symbolt result;
-  json_irept json2irep(true);
+  json_irept json2irep;
   for(const auto &kv : in.object)
   {
     if(kv.first == "type")

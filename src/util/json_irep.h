@@ -20,7 +20,7 @@ class json_objectt;
 class json_irept
 {
 public:
-  explicit json_irept(bool include_comments);
+  json_irept();
   json_objectt convert_from_irep(const irept &) const;
   irept convert_from_json(const jsont &) const;
 
@@ -34,8 +34,6 @@ private:
     const std::string &sub_tree_id,
     const irept::named_subt &sub_trees,
     json_objectt &parent) const;
-
-  bool include_comments;
 };
 
 #endif // CPROVER_UTIL_JSON_IREP_H

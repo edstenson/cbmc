@@ -155,7 +155,7 @@ void convert_decl(
   if(trace_options.json_full_lhs)
   {
     // Not language specific, still mangled, fully-qualified name of lhs
-    json_assignment["rawLhs"] = json_irept(true).convert_from_irep(simplified);
+    json_assignment["rawLhs"] = json_irept().convert_from_irep(simplified);
   }
   json_assignment["hidden"] = jsont::json_boolean(step.hidden);
   json_assignment["internal"] = jsont::json_boolean(step.internal);

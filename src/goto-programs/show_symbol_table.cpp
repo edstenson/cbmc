@@ -166,7 +166,7 @@ static void show_symbol_table_json_ui(
     result_wrapper.push_back_stream_object("symbolTable");
 
   const namespacet ns(symbol_table);
-  json_irept irep_converter(true);
+  json_irept irep_converter;
 
   for(const auto &id_and_symbol : symbol_table.symbols)
   {
@@ -241,7 +241,7 @@ static void show_symbol_table_brief_json_ui(
     result_wrapper.push_back_stream_object("symbolTable");
 
   const namespacet ns(symbol_table);
-  json_irept irep_converter(true);
+  json_irept irep_converter;
 
   for(const auto &id_and_symbol : symbol_table.symbols)
   {

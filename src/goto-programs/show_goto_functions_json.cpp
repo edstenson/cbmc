@@ -40,7 +40,7 @@ json_objectt show_goto_functions_jsont::convert(
   const goto_functionst &goto_functions)
 {
   json_arrayt json_functions;
-  const json_irept no_comments_irep_converter(false);
+  const json_irept no_comments_irep_converter;
 
   const auto sorted = goto_functions.sorted();
 
