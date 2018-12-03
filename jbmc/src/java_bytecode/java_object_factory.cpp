@@ -18,6 +18,8 @@ Author: Daniel Kroening, kroening@kroening.com
 
 #include "generic_parameter_specialization_map_keys.h"
 #include "java_root_class.h"
+#include "java_string_literals.h"
+#include <iostream>
 
 class java_object_factoryt
 {
@@ -564,7 +566,7 @@ static mp_integer max_value(const typet &type)
 /// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 /// Unit tests in `unit/java_bytecode/java_object_factory/` ensure
 /// it is the case.
-bool initialize_nondet_string_fields(
+void initialize_nondet_string_fields(
   struct_exprt &struct_expr,
   code_blockt &code,
   const std::size_t &min_nondet_string_length,
@@ -574,11 +576,8 @@ bool initialize_nondet_string_fields(
   symbol_table_baset &symbol_table,
   bool printable)
 {
-  if(!java_string_library_preprocesst::implements_java_char_sequence(
-       struct_expr.type()))
-  {
-    return false;
-  }
+  INVARIANT(java_string_library_preprocesst::implements_java_char_sequence(struct_expr.type()),
+    "The given struct_expr does implement char sequence, and so initialize_nondet_string_fields should not be called for it");
 
   namespacet ns(symbol_table);
 
@@ -589,8 +588,8 @@ bool initialize_nondet_string_fields(
   // (typically when string refinement is not activated), `struct_type`
   // just contains the standard Object fields (or may have some other model
   // entirely), and in particular has no length and data fields.
-  if(!struct_type.has_component("length") || !struct_type.has_component("data"))
-    return false;
+  INVARIANT(struct_type.has_component("length") && struct_type.has_component("data"),
+    "The given struct_type does not have 'length' or 'data' component, and so initialize_nondet_string_fields should not be called for it");
 
   // We allow type StringBuffer and StringBuilder to be initialized
   // in the same way has String, because they have the same structure and
@@ -657,8 +656,6 @@ bool initialize_nondet_string_fields(
     add_character_set_constraint(
       array_pointer, length_expr, " -~", symbol_table, loc, code);
   }
-
-  return true;
 }
 
 /// Initializes a pointer \p expr of type \p pointer_type to a primitive-typed
@@ -1009,31 +1006,85 @@ void java_object_factoryt::gen_nondet_struct_init(
   {
     class_identifier = struct_tag;
 
+    bool is_char_sequence = java_string_library_preprocesst::implements_java_char_sequence(struct_type);
+    bool has_data_length = struct_type.has_component("length") && struct_type.has_component("data");
+    // following is true if we were not given fixed string input values using --string-input-value
+    bool no_input_values = object_factory_parameters.string_input_values.empty();
+
     // Add an initial all-zero write. Most of the fields of this will be
     // overwritten, but it helps to have a whole-structure write that analysis
     // passes can easily recognise leaves no uninitialised state behind.
 
-    // This code mirrors the `remove_java_new` pass:
-    auto initial_object = zero_initializer(struct_type, source_locationt(), ns);
-    CHECK_RETURN(initial_object.has_value());
-    irep_idt qualified_clsid = "java::" + id2string(class_identifier);
-    set_class_identifier(
-      to_struct_expr(*initial_object), ns, symbol_typet(qualified_clsid));
+    if(!is_char_sequence || !has_data_length || no_input_values)
+    {
+      auto initial_object = zero_initializer(struct_type, source_locationt(), ns);
+      CHECK_RETURN(initial_object.has_value());
+      irep_idt qualified_clsid = "java::" + id2string(class_identifier);
+      set_class_identifier(
+        to_struct_expr(*initial_object), ns, symbol_typet(qualified_clsid));
 
-    // If the initialised type is a special-cased String type (one with length
-    // and data fields introduced by string-library preprocessing), initialise
-    // those fields with nondet values:
-    skip_special_string_fields = initialize_nondet_string_fields(
-      to_struct_expr(*initial_object),
-      assignments,
-      object_factory_parameters.min_nondet_string_length,
-      object_factory_parameters.max_nondet_string_length,
-      loc,
-      object_factory_parameters.function_id,
-      symbol_table,
-      object_factory_parameters.string_printable);
+      if (is_char_sequence && has_data_length)
+      { // we're dealing with a string
+        skip_special_string_fields = true;
+        initialize_nondet_string_fields(
+          to_struct_expr(*initial_object),
+          assignments,
+          object_factory_parameters.min_nondet_string_length,
+          object_factory_parameters.max_nondet_string_length,
+          loc,
+          object_factory_parameters.function_id,
+          symbol_table,
+          object_factory_parameters.string_printable);
+      } //else '!is_char_sequence || !has_data_length' is met and we are not dealing with a string
 
-    assignments.add(code_assignt(expr, *initial_object));
+      assignments.add(code_assignt(expr, *initial_object));
+    } else {
+      skip_special_string_fields = true;
+    
+      // we're dealing with a string and we should set fixed values
+      
+      auto size = object_factory_parameters.string_input_values.size();
+
+      INVARIANT(size > 0, "No string-input-value parameter given, but some were expected. This looks like a programming error"); //thanks to no_input_values==false
+      if (size == 1) 
+      {
+        exprt name_literal(ID_java_string_literal);
+        name_literal.set(ID_value, object_factory_parameters.string_input_values.front());
+
+        symbol_exprt s = get_or_create_string_literal_symbol(name_literal, symbol_table, true);
+        assignments.add(code_assignt(expr, s));
+      }
+      else //size >=2
+      {
+        code_ifthenelset* ite = new code_ifthenelset;
+        ite->cond() = side_effect_expr_nondett(bool_typet(), loc);
+        auto it = object_factory_parameters.string_input_values.begin();
+        exprt name_literal_1(ID_java_string_literal);
+        name_literal_1.set(ID_value, *(it));
+        symbol_exprt s_1 = get_or_create_string_literal_symbol(name_literal_1, symbol_table, true);
+        ite->then_case()=code_assignt(expr, s_1);
+        exprt name_literal_2(ID_java_string_literal);
+        name_literal_2.set(ID_value, *(++it));
+        symbol_exprt s_2 = get_or_create_string_literal_symbol(name_literal_2, symbol_table, true);
+        ite->else_case()=code_assignt(expr, s_2);
+
+        while(++it != object_factory_parameters.string_input_values.end())
+        {
+          code_ifthenelset* ite_pre = ite;
+          ite = new code_ifthenelset;
+          ite->cond() = side_effect_expr_nondett(bool_typet(), loc);
+
+          exprt name_literal_n(ID_java_string_literal);
+          name_literal_n.set(ID_value, *it);
+          symbol_exprt s_n = get_or_create_string_literal_symbol(name_literal_n, symbol_table, true);
+          ite->then_case()=code_assignt(expr, s_n);
+
+          ite->else_case()=*ite_pre;
+        }
+  
+        assignments.add(*ite);
+      }
+    }
   }
 
   for(const auto &component : components)

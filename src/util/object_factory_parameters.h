@@ -69,6 +69,8 @@ struct object_factory_parameterst
   /// Force string content to be ASCII printable characters when set to true.
   bool string_printable = false;
 
+  std::list<std::string> string_input_values;
+
   /// Function id, used as a prefix for identifiers of temporaries
   irep_idt function_id;
 

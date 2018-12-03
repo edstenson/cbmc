@@ -131,6 +131,13 @@ static void java_static_lifetime_init(
   code_blockt &code_block=to_code_block(to_code(initialize_symbol.value));
   object_factory_parameters.function_id = initialize_symbol.name;
 
+  for(const auto &val : object_factory_parameters.string_input_values)
+  {
+    exprt my_literal(ID_java_string_literal);
+    my_literal.set(ID_value, val);
+    get_or_create_string_literal_symbol(my_literal, symbol_table, string_refinement_enabled);
+  }
+
   // We need to zero out all static variables, or nondet-initialize if they're
   // external. Iterate over a copy of the symtab, as its iterators are
   // invalidated by object_factory:
